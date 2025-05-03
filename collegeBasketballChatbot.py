@@ -103,8 +103,21 @@ def filter_teams_by_stats(user_input):
             column = stat_keywords[match[0]]
             filters.append((column, operator, float(value))) 
             
+    # sort the teams by top whatever number the user enters of whatever stat the user enters
+    sort_match = re.search(r"(top\s+(\d+)\s+teams\s+in)\s*([a-zA-Z\s]+)", user_input)
+    if sort_match:
+        top_n = int(sort_match.group(2))
+        stat_requested = sort_match.group(3).strip().lower()
+        # Find the stat column
+        stat_column = stat_keywords.get(stat_requested)
+        if stat_column:
+            # Sort the DataFrame based on the requested stat
+            sorted_df = df.sort_values(by=stat_column, ascending=False)
+            top_teams = sorted_df.head(top_n)
+            return f"Top {top_n} teams in {stat_requested}:\n" + "\n".join(top_teams.index.tolist())
+            
           
-    # Now handle the conference filter
+    #conference filter
     conf_match = re.search(r"(?:in|from|conference)\s+(?:the\s+)?([a-zA-Z\s]+?)(?=\s+(that|with|where|having|and|also|which|who)|$)", user_input)
     conference = None
     if conf_match:
@@ -125,7 +138,7 @@ def filter_teams_by_stats(user_input):
             ]
             print(f"After filtering by conference '{conference}', rows left: {len(filtered_df)}")
     
-    # Then filter by stats
+    # filter by stats
     for col, op, val in filters:
         if col not in filtered_df.columns:
             return f"Column '{col}' not found in data."
