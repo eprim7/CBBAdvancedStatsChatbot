@@ -1,10 +1,10 @@
 # Evan Primasing
 # College Basketball Bot that will display all advanced stats for all college basketball teams
 
-import nltk # type: ignore
+import nltk
 import random
 import string
-import pandas as pd # type: ignore
+import pandas as pd
 import re
 
 from difflib import get_close_matches
@@ -115,6 +115,19 @@ def filter_teams_by_stats(user_input):
             sorted_df = df.sort_values(by=stat_column, ascending=False)
             top_teams = sorted_df.head(top_n)
             return f"Top {top_n} teams in {stat_requested}:\n" + "\n".join(top_teams.index.tolist())
+        
+    # Find the bottom whatever number of teams the user entered for whatever stat
+    sort_match = re.search(r"(bottom\s+(\d+)\s+teams\s+in)\s*([a-zA-Z\s]+)", user_input)
+    if sort_match:
+        bottom_n = int(sort_match.group(2))
+        stat_requested = sort_match.group(3).strip().lower()
+        
+        # gets the stat column
+        stat_column = stat_keywords.get(stat_requested)
+        if stat_column:
+            sorted_df = df.sort_values(by=stat_column, ascending=False)
+            bottom_teams = sorted_df.tail(bottom_n)
+            return f"bottom {bottom_n} teams in {stat_requested}:\n" + "\n".join(bottom_teams.index.tolist())
             
           
     #conference filter
