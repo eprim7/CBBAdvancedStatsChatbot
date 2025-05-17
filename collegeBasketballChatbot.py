@@ -1,4 +1,4 @@
-# Evan Primasing
+# Evan Primasing, Bricen Hicks, Obadiah Sieg
 # College Basketball Bot that will display all advanced stats for all college basketball teams
 
 import nltk
@@ -132,6 +132,7 @@ def filter_teams_by_stats(user_input):
           
     #conference filter
     conf_match = re.search(r"(?:in|from|conference)\s+(?:the\s+)?([a-zA-Z\s]+?)(?=\s+(that|with|where|having|and|also|which|who)|$)", user_input)
+    
     conference = None
     if conf_match:
         conference = conf_match.group(1).strip().upper()
