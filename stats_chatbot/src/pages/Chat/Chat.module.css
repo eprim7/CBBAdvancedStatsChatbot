@@ -1,0 +1,65 @@
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #fff;
+}
+h1{
+    text-align: center;
+    color:#0033A0;
+}
+.chatBox {
+    display: flex;
+    flex-direction: column;
+    width: 80%;
+    max-width: 800px;
+    height: 90vh;
+    border: 2px solid #FF6F61;
+    border-radius: 30px;
+    background-color: #f1f1f1;
+    padding: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.responseWindow {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    border-radius: 20px;
+    background-color: #f1f1f1;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.input {
+    border: 2px solid #FF6F61;
+    border-radius: 30px;
+    height: 50px;
+    padding: 0 1rem;
+    font-size: 1.2rem;
+    color: #0033A0;
+    margin-top: 1rem;
+    width: 90%;
+}
+.input:focus {
+    outline: none;
+    border: 2px solid #FF6F61;
+}
+.input::placeholder {
+    color: #888;
+    font-style: italic;
+}
+.userMessage {
+    background-color: #d1e7dd;
+    padding: 0.5rem;
+    border-radius: 8px;
+    margin: 0.5rem 0;
+    font-size: 1.2rem;
+}
+.botMessage {
+    background-color: #f8d7da;
+    padding: 0.5rem;
+    border-radius: 8px;
+    margin: 0.5rem 0;
+    text-align: center;
+    font-size: 1.2rem;
+}

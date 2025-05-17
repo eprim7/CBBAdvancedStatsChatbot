@@ -244,7 +244,6 @@ def run_chatbot(user_input):
             return robo_response
         
     flag=True
-    print("I am the college basketball bot and I will provide advanced stats for any college basketball team that you input. When you are done say bye!")
         
         
     # continually ask them
