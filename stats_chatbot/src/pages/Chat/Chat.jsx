@@ -10,8 +10,24 @@ const Chat = () => {
 
   // Function to split bot message stats onto separate lines
   const formatBotMessage = (text) => {
-    return text.split(/(?=\b[A-Z0-9%_]+:)/g);
+      const keys = [
+        "SOS", "NET", "Offensive Rating", "Defensive Rating", "EFG", "TS%", "ORB%", "DRB%", "TRB%", "AST%", "STL%", "BLK%",
+        "PACE", "3PAR", "FTAR", "PPG", "FG%", "2FG%", "3FG%", "FT%", "APG", "AST-TOV", "TOV", "Allowed_PPG",
+        "Allowed_FG%", "2Point_Allowed_FG%", "3Point_Allowed_FG%", "SPG", "BPG", "Fouls", "ADJOE", "ADJDE", "BARTHAG", "WAB", "CONF"
+      ];
+
+      let normalized = text.replace(/\n/g, ' ').replace(/\s+/g, ' ');
+
+      const escapedKeys = keys.map(key => key.replace(/([.*+?^${}()|\[\]\/\\])/g, '\\$1'));
+
+      const pattern = new RegExp(`\\b(${escapedKeys.join('|')}):`, 'g');
+
+      normalized = normalized.replace(pattern, '\n$1:');
+
+      return normalized.split('\n').map(line => line.trim()).filter(line => line.length > 0);
   };
+
+
 
   // function to send the message to the python backend. I will then get a response back from the backend and set it in setMessages
   const sendMessage = async () => {
@@ -46,7 +62,7 @@ const Chat = () => {
       <div className={styles.container}>
         <div className={styles.chatBox}>
           <div className={styles.responseWindow}>
-            <h1>Enter your teams or queries here</h1>
+            <h1 className={styles.h1}>Enter your teams or queries here</h1>
             {messages.map((msg, idx) => {
               if (msg.sender === "bot") {
                 const lines = formatBotMessage(msg.text);
@@ -54,7 +70,7 @@ const Chat = () => {
                   <div key={idx} className={styles.botMessage}>
                     <strong>{msg.sender}:</strong>
                     {lines.map((line, i) => (
-                      <p key={i} style={{ margin: '0.2rem 0', paddingLeft: '1rem' }}>
+                      <p key={i} className={styles.p}>
                         {line.trim()}
                       </p>
                     ))}
