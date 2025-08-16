@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
-import Papa from "papaparse";
-import styles from '../CsvTable/CsvTable.module.css';
+import styles from "../CsvTable/CsvTable.module.css";
 
 const CsvTable = () => {
   const [data, setData] = useState([]);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+  const [conferenceFilter, setConferenceFilter] = useState("All");
+  const [conferences, setConferences] = useState([]);
 
   const headers = [
     { key: "SOS", label: "SOS" },
@@ -42,38 +44,104 @@ const CsvTable = () => {
     { key: "CONF", label: "CONF" },
   ];
 
-  useEffect(() => {
-    fetch("/team_rankings.csv")
-      .then((response) => response.text())
-      .then((text) => {
-        Papa.parse(text, {
-          header: true,
-          skipEmptyLines: true,
-          complete: (results) => {
-            setData(results.data);
-          },
-        });
-      });
-  }, []);
+useEffect(() => {
+  fetch("http://localhost:5000/api/stats")
+    .then((response) => response.json())
+    .then((data) => {
+      setData(data);
+
+      const uniqueConfs = [
+        ...new Set(data.map((row) => row.CONF).filter(Boolean)),
+      ].sort();
+      setConferences(uniqueConfs);
+    })
+    .catch((error) => console.error("Error fetching data:", error));
+}, []);
+
+
+  const handleSort = (key) => {
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const filteredData = React.useMemo(() => {
+    if (conferenceFilter === "All") return data;
+    return data.filter((row) => row.CONF === conferenceFilter);
+  }, [data, conferenceFilter]);
+
+  const sortedData = React.useMemo(() => {
+    if (!sortConfig.key) return filteredData;
+
+    return [...filteredData].sort((a, b) => {
+      const aValue = isNaN(parseFloat(a[sortConfig.key]))
+        ? a[sortConfig.key]
+        : parseFloat(a[sortConfig.key]);
+      const bValue = isNaN(parseFloat(b[sortConfig.key]))
+        ? b[sortConfig.key]
+        : parseFloat(b[sortConfig.key]);
+
+      if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [filteredData, sortConfig]);
 
   return (
     <div className={styles.container}>
       <h1 className={styles.h1}>Team Stats</h1>
+
+      <div style={{ marginBottom: "10px" }}>
+        <label style={{ marginRight: "8px" }}>Filter by Conference:</label>
+        <select
+          value={conferenceFilter}
+          onChange={(e) => setConferenceFilter(e.target.value)}
+        >
+          <option value="All">All</option>
+          {conferences.map((conf) => (
+            <option key={conf} value={conf}>
+              {conf}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <table className={styles.table}>
         <thead>
           <tr>
-            <th className={styles.th}>Team</th>
+            <th
+              className={styles.th}
+              onClick={() => handleSort("Team")}
+              style={{ cursor: "pointer" }}
+            >
+              Team{" "}
+              {sortConfig.key === "Team" &&
+                (sortConfig.direction === "asc" ? "▲" : "▼")}
+            </th>
             {headers.map((header) => (
-              <th className={styles.th} key={header.key}>{header.label}</th>
+              <th
+                className={styles.th}
+                key={header.key}
+                onClick={() => handleSort(header.key)}
+                style={{ cursor: "pointer" }}
+              >
+                {header.label}{" "}
+                {sortConfig.key === header.key &&
+                  (sortConfig.direction === "asc" ? "▲" : "▼")}
+              </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {data.map((team, idx) => (
+          {sortedData.map((team, idx) => (
             <tr key={idx}>
               <td className={styles.td}>{team["Team"]}</td>
               {headers.map((header) => (
-                <td className={styles.td}key={header.key}>{team[header.key]}</td>
+                <td className={styles.td} key={header.key}>
+                  {team[header.key]}
+                </td>
               ))}
             </tr>
           ))}

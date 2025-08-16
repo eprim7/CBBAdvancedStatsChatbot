@@ -28,8 +28,12 @@ const Chat = () => {
   };
 
 
+  /*
+    function_name: sendMessage
+    purpose: send a message to our backend server, and get a response
+    return: returns the response based on the query
+  */
 
-  // function to send the message to the python backend. I will then get a response back from the backend and set it in setMessages
   const sendMessage = async () => {
     if (!input.trim()) return;
 
@@ -39,7 +43,7 @@ const Chat = () => {
 
     try {
       // send it to the backend
-      const res = await axios.post("http://127.0.0.1:8000/chat", { text: input });
+      const res = await axios.post("http://localhost:5000/api/chat", { text: input });
       // set the bots message
       const botMessage = { sender: "bot", text: res.data.response };
       // set the messages in setMessages

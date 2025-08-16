@@ -13,9 +13,6 @@ function Header(){
                 <h1>
                     <Link className={styles.link}  to='/Stats'>Stats</Link>
                 </h1>
-                <h1>
-                    <Link className={styles.link} to='/About'>About</Link>
-                </h1>
             </div>
             <hr />
         </>

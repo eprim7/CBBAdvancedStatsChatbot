@@ -1,47 +1,17 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-from fastapi.middleware.cors import CORSMiddleware
 import nltk
 import random
 import string
 import pandas as pd
 import re
 from difflib import get_close_matches
+from get_data import get_all_stats
 
 
-def run_chatbot(user_input):
-    lemmer = nltk.stem.WordNetLemmatizer()
+# CONSTANTS
 
-    # lemmatizes each token in the input list
-    def lemTokens(tokens):
-        return [lemmer.lemmatize(token) for token in tokens]
-
-    remove_punct_dict = dict((ord(punct), None) for punct in string.punctuation)
-
-    # sends text to lower case, strips punctuation, and tokenizes the cleaned text
-    def lemNormalize(text):
-        return lemTokens(nltk.word_tokenize(text.lower().translate(remove_punct_dict)))
-
-    #
-    GREETING_INPUTS = ("hey", "hi", "hello", "what's up")
-
-    GREETINGS_RESPONSES = ["hey", "hi", "hello", "what's up"]
-
-    df = pd.read_csv("team_rankings.csv") # get the dataframe for the stats I am importing
-    df.set_index("Team", inplace=True)
-
-    # open the csv file
-    with open("team_rankings.csv", "r") as myFile1:
-        data1 = myFile1.read() # read the data from the file
-        sent_tokens = data1.splitlines() # split data at each line
-        
-
-    def filter_teams_by_stats(user_input):
-        user_input = user_input.lower()
-        
-        filters = []
-        
-        stat_keywords = {
+GREETING_INPUTS = ("hey", "hi", "hello", "what's up")
+GREETINGS_RESPONSES = ["hey", "hi", "hello", "what's up"]
+STATS_KEYWORDS = {
             'strength of schedule': 'SOS',
             'net rating': 'NET',
             'offensive rating': 'offensive rating',
@@ -77,11 +47,46 @@ def run_chatbot(user_input):
             'wins above bubble': 'WAB',
             'conference': 'CONF',
         }
+
+lemmer = nltk.stem.WordNetLemmatizer()
+remove_punct_dict = dict((ord(punct), None) for punct in string.punctuation)
+
+def lemTokens(tokens):
+    return [lemmer.lemmatize(token) for token in tokens]
+
+
+# sends text to lower case, strips punctuation, and tokenizes the cleaned text
+def lemNormalize(text):
+    return lemTokens(nltk.word_tokenize(text.lower().translate(remove_punct_dict)))
+
+# greet the user
+def greeting(sentence):
+    for word in sentence.split():
+        if word.lower() in GREETING_INPUTS:
+            return random.choice(GREETINGS_RESPONSES) # randomly choose a greeting
+
+def run_chatbot(user_input):
+
+    data = get_all_stats()
+    if not data:
+        df = pd.DataFrame()
+        sent_tokens = []
+    else:
+        df = pd.DataFrame(data)
+        df.set_index("Team", inplace=True)
+        # For your TF-IDF chatbot
+        sent_tokens = df.apply(lambda row: " ".join([str(v) for v in row]), axis=1).tolist()
         
-        inverse_stat_keywords = {v.lower(): v for v in stat_keywords.values()}
-        stat_keywords.update(inverse_stat_keywords)
+
+    def filter_teams_by_stats(user_input):
+        user_input = user_input.lower()
         
-        sorted_stats = sorted(stat_keywords.keys(), key=lambda x: -len(x))
+        filters = []
+        
+        inverse_STATS_KEYWORDS = {v.lower(): v for v in STATS_KEYWORDS.values()}
+        STATS_KEYWORDS.update(inverse_STATS_KEYWORDS)
+        
+        sorted_stats = sorted(STATS_KEYWORDS.keys(), key=lambda x: -len(x))
         escaped_stats = [re.escape(stat) for stat in sorted_stats]
         stat_pattern = '|'.join(escaped_stats)
         
@@ -99,9 +104,9 @@ def run_chatbot(user_input):
         
         for stat, operator, value in matches:
             operator = operator_map.get(operator, operator)
-            match = get_close_matches(stat, stat_keywords.keys(), n=1, cutoff=0.6)
+            match = get_close_matches(stat, STATS_KEYWORDS.keys(), n=1, cutoff=0.6)
             if match:
-                column = stat_keywords[match[0]]
+                column = STATS_KEYWORDS[match[0]]
                 filters.append((column, operator, float(value))) 
                 
         # sort the teams by top whatever number the user enters of whatever stat the user enters
@@ -110,7 +115,7 @@ def run_chatbot(user_input):
             top_n = int(sort_match.group(2))
             stat_requested = sort_match.group(3).strip().lower()
             # Find the stat column
-            stat_column = stat_keywords.get(stat_requested)
+            stat_column = STATS_KEYWORDS.get(stat_requested)
             if stat_column:
                 # Sort the DataFrame based on the requested stat
                 sorted_df = df.sort_values(by=stat_column, ascending=False)
@@ -124,7 +129,7 @@ def run_chatbot(user_input):
             stat_requested = sort_match.group(3).strip().lower()
             
             # gets the stat column
-            stat_column = stat_keywords.get(stat_requested)
+            stat_column = STATS_KEYWORDS.get(stat_requested)
             if stat_column:
                 sorted_df = df.sort_values(by=stat_column, ascending=False)
                 bottom_teams = sorted_df.tail(bottom_n)
@@ -202,14 +207,6 @@ def run_chatbot(user_input):
             stats_string += f"{stat}: {value}\n"
         return stats_string
 
-
-        
-    # greet the user
-    def greeting(sentence):
-        for word in sentence.split():
-            if word.lower() in GREETING_INPUTS:
-                return random.choice(GREETINGS_RESPONSES) # randomly choose a greeting
-
     from sklearn.feature_extraction.text import TfidfVectorizer # type: ignore
     from sklearn.metrics.pairwise import cosine_similarity # type: ignore
 
@@ -264,24 +261,7 @@ def run_chatbot(user_input):
             
     return f"Echo: {user_input}"
 
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # React default dev server
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-class Message(BaseModel):
-    text: str
     
-
-@app.post("/chat")
-def chat(message: Message):
-    response = run_chatbot(message.text)
-    return {"response": response}
        
         
     
